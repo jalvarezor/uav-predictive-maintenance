@@ -7,8 +7,7 @@ import numpy as np
 from pathlib import Path
 from scipy.interpolate import interp1d
 
-# Rutas base del proyecto
-RUTA_PROYECTO = Path("C:/Users/2890960/Documents/master/tfm/uav-predictive-maintenance")
+RUTA_PROYECTO = Path(__file__).parent.parent
 RUTA_INPUT     = RUTA_PROYECTO / "data" / "input"
 RUTA_OUTPUT    = RUTA_PROYECTO / "data" / "output"
 RUTA_OUTPUT.mkdir(exist_ok=True)
