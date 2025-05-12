@@ -1,4 +1,6 @@
-# Generación de gráficos de señales clave (IMU AZ, throttle, altitude) con superposición de predicciones de modelos
+# Generación de gráficos de señales clave (IMU AZ, throttle, altitude) 
+# con superposición de predicciones de modelos.
+# Se genera una gráfica por modelo para mejorar la legibilidad.
 # Autor: Jorge Alvarez
 # TFM - Detección de Fallos en UAVs
 
@@ -24,52 +26,69 @@ except Exception as e:
     print(f"Error: no se pudo leer X_test.csv: {str(e)}")
     exit()
 
-# Cargar predicciones_modelos_con_metricas.json
+# Cargar el resultado de las evaluaciones de los modelos
 predicciones_path = RUTA_OUTPUT / "predicciones_modelos_con_metricas.json"
 if not predicciones_path.exists():
     print(f"Error: no se encontró '{predicciones_path.name}'")
     exit()
 with open(predicciones_path, 'r') as f:
     predicciones = json.load(f)
+print("Datos cargados correctamente.")
 
 # Señales clave para graficar
-senal_x = 'imu_az_mean'    # Aceleración vertical media
-senal_y = 'throttle_mean'  # Throttle medio
-senal_z = 'altitude_slope' # Pendiente de altitud
+senal_x = 'imu_az_mean'
+senal_y = 'throttle_mean'
+senal_z = 'altitude_slope'
 
 # Tiempo para graficar
 tiempo = X_test.index
 
-# Graficar detecciones de anomalías
-plt.figure(figsize=(16, 10))
-
+# Graficar resultados por modelo
 for i, modelo in enumerate(predicciones):
-    preds = np.array(predicciones[modelo]['preds'])
+    info = predicciones[modelo]
+    preds = np.array(info['preds'])
     idx_anomalies = np.where(preds == 1)[0]
 
-    plt.subplot(len(predicciones), 3, i * 3 + 1)
+    # Crear nueva figura para este modelo
+    plt.figure(figsize=(14, 8))
+    
+    # IMU AZ Mean
+    plt.subplot(3, 1, 1)
     plt.plot(tiempo, X_test[senal_x], label=senal_x, color='blue')
     plt.scatter(idx_anomalies, X_test.iloc[idx_anomalies][senal_x], c='red', s=10, label="Anomalía detectada")
     plt.title(f"{modelo} -> {senal_x}")
-    plt.legend()
     plt.grid(True)
+    plt.legend()
 
-    plt.subplot(len(predicciones), 3, i * 3 + 2)
+    # Throttle Mean
+    plt.subplot(3, 1, 2)
     plt.plot(tiempo, X_test[senal_y], label=senal_y, color='green')
     plt.scatter(idx_anomalies, X_test.iloc[idx_anomalies][senal_y], c='red', s=10, label="Anomalía detectada")
     plt.title(f"{modelo} -> {senal_y}")
-    plt.legend()
     plt.grid(True)
+    plt.legend()
 
-    plt.subplot(len(predicciones), 3, i * 3 + 3)
+    # Altitude Slope
+    plt.subplot(3, 1, 3)
     plt.plot(tiempo, X_test[senal_z], label=senal_z, color='orange')
     plt.scatter(idx_anomalies, X_test.iloc[idx_anomalies][senal_z], c='red', s=10, label="Anomalía detectada")
     plt.title(f"{modelo} -> {senal_z}")
-    plt.legend()
     plt.grid(True)
+    plt.legend()
+    
+    # Ajustar diseño
+    plt.tight_layout()
 
-plt.tight_layout()
-plt.show()
-ruta_grafico = RUTA_OUTPUT / "grafico_detecciones_vs_señales.png"
-plt.savefig(ruta_grafico, dpi=150, bbox_inches='tight')
-print(f"Gráfico guardado en '{ruta_grafico}'")
+    # Limpiar nombre de modelo para usarlo en el nombre del archivo
+    from re import sub
+    nombre_archivo = sub(r'[^\w\-]', '', modelo.replace(' ', '_'))
+    
+    # Guardar gráfico en disco
+    ruta_grafico = RUTA_OUTPUT / 'graphs' / f"{nombre_archivo}.png"
+    plt.savefig(ruta_grafico, dpi=150, bbox_inches='tight')
+    print(f"Gráfico guardado: '{ruta_grafico}'")
+
+    # Cerrar la figura antes de crear una nueva
+    plt.close()
+
+print("Todos los modelos han sido graficados y guardados individualmente.")
